@@ -44,24 +44,13 @@ random.seed(args.random_seed)
 torch.backends.cudnn.deterministic = True
 
 
-    # set tf env
-#_init_inception()
-#inception_path = check_or_download_inception(None)
-#create_inception_graph(inception_path)
 
-#Building model
-#TFNet3=TFNet3()
-#ResNet=ResNet()
-#discriminator_vi = Discriminator_vi(opt.label_size)
-#discriminator_ir = Discriminator_ir(opt.label_size)
+
 Transfusion=Transfusion16 ()
 
 
 if cuda:
-    #TFNet3.cuda()
-    #ResNet.cuda()
-    #discriminator_vi.cuda()
-    #discriminator_ir.cuda()
+   
     Transfusion.cuda()
 
 
@@ -74,17 +63,7 @@ data_dir_ir = os.path.join('./{}'.format(opt.checkpoint_dir), "./images/Train_ir
 data_dir_vi = os.path.join('./{}'.format(opt.checkpoint_dir), "./images/Train_vi","train.h5")
 train_data_ir, train_label_ir = read_data(data_dir_ir)
 train_data_vi, train_label_vi = read_data(data_dir_vi)
-#data_transform = xDataTransforms.Compose([xDataTransforms.RandomCrop(opt.img_size),
-                                     #xDataTransforms.ToTensor()])
 
-#image_datasets = xDataLoader.Loader(opt=opt,
-                                        #transform=data_transform,
-                                        #)
-
-#data_loaders = DataLoader(dataset=image_datasets,
-                              #batch_size=opt.batch_size,
-                              #shuffle=False,
-                              #num_workers=opt.num_workers)
 
 # Optimizers
 if args.optimizer == "adam":
@@ -93,27 +72,18 @@ if args.optimizer == "adam":
 elif args.optimizer == "adamw":
     Transfusion_optimizer = AdamW(filter(lambda p: p.requires_grad, Transfusion.parameters()),
                           args.g_lr, weight_decay=args.wd)
-#gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter * args.n_critic)
-#dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter * args.n_critic)
+
 Transfusion_scheduler= LinearLrDecay(Transfusion_optimizer,args.g_lr,0.0,0,args.max_iter*args.n_critic)
-  #TFNet3_optimizer = torch.optim.Adam(TFNet3.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-  #ResNet_optimizer = torch.optim.Adam(ResNet.parameters(), lr=opt.lr,betas=(opt.b1,opt.b2))
-  #dis_optimizer_vi = torch.optim.Adam(discriminator_vi.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
-  #dis_optimizer_ir = torch.optim.Adam(discriminator_ir.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+  
 if cuda:
     Tensor = torch.cuda.FloatTensor
 else:
     Tensor=torch.FloatTensor
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-#TFNet3=nn.DataParallel(TFNet3,device_ids=[0, 1, 2,3,4])
-#discriminator_ir=nn.DataParallel(discriminator_ir,device_ids=[0, 1, 2,3,4])
-#discriminator_vi=nn.DataParallel(discriminator_vi,device_ids=[0, 1, 2,3,4])
-#Tensor = Tensor.to(device=torch.device("cuda:0"))
+
 Transfusion=nn.DataParallel(Transfusion,device_ids=[0,1])
-#TFNet3.to(device)
-#discriminator_vi.to(device)
-#discriminator_ir.to(device)
+
 Transfusion.to(device)
 mse_loss = torch.nn.MSELoss()
 weight_mse = [1, 10, 100, 1000]
