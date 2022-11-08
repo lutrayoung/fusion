@@ -3,7 +3,6 @@ import argparse
 import os
 import numpy as np
 import math
-# noinspection PyUnresolvedReferences
 import sys
 
 import torch
@@ -19,20 +18,15 @@ import torch.nn.functional as F
 import torch.autograd as autograd
 
 import time
-#import models
 from utils_gan import (read_data,input_setup,imsave)
-#from data import xDataLoader
-#from data import xDataTransforms
 from loss import xLoss
-from loss.F_TargetLoss1 import F_TargetLoss
-from loss.F_BackgdLoss1 import F_BackgdLoss
-#from model import TFNet3,TFNet7,ResNet,TFNet6,Discriminator_vi,Discriminator_ir,Discriminator_i,Discriminator_v
+#from loss.F_TargetLoss1 import F_TargetLoss
+#from loss.F_BackgdLoss1 import F_BackgdLoss
 import random
 import cfg
 from utils.inception_score import _init_inception
 from utils.fid_score import create_inception_graph, check_or_download_inception
 import models
-#from models.Transfusion import Transfusion8,buildmodel
 from models.Transfusion3 import Transfusion16
 from adamw import AdamW
 from functions import train, validate, LinearLrDecay, load_params, copy_params, cur_stages
@@ -166,12 +160,8 @@ def train():
         #batch_num = math.ceil(len(data_loaders.dataset) / opt.batch_size)
 
 
-            # dis_lr_scheduler.step()
-            # gen_lr_scheduler.step()
-        #discriminator_vi.train(True)
-        #discriminator_ir.train(True)
-        #TFNet3.train(True)
-        #ResNet.train(True)
+            
+       
         Transfusion.train(True)
         batch_idxs = len(train_data_ir) // opt.batch_size
         for idx in range(0, batch_idxs):
@@ -196,86 +186,39 @@ def train():
 
 
 
-        # data loaders[train] 包含：image, label其中images（包含ir和vis)：132x132,labels（包含ir和vis):120x120
+        
 
-        #for ii, (irimages, viimages, labels) in enumerate(data_loaders):
-            #if torch.cuda.is_available():
-                #irimages=Variable(irimages.cuda())
-                #viimages=Variable(viimages.cuda())
-                #inputs = Variable(images.cuda())
-                #labels = Variable(labels.cuda())
-            #else:
-                #irimages=Variable(irimages)
-                #viimages=Variable(viimages)
-                #inputs = Variable(images)
-                #labels = Variable(labels)
-            #labels_ir = labels[:, :1, :, :]
-            #labels_vi = labels[:, 1:, :, :]
-
-            # Configure input
-            # labels = Variable(labels.type(Tensor))
-            # labels_vi = Variable(labels_vi.type(Tensor))
-            # labels_ir = Variable(labels_ir.type(Tensor))
-
-            # ---------------------
-            #  Train Discriminator_vi
-            # ---------------------
-
-            #dis_optimizer_vi.zero_grad()
+       
             Transfusion_optimizer.zero_grad()
 
-            # Generate a batch of images
-            #fusion_img = TFNet3(batch_images_ir,batch_images_vi)
+           
+           
             fusion_img = Transfusion(batch_images)[3]
-            #fusion_img = ResNet(irimages,viimages)
+           
 
-            # Real images
-            #real_validity_vi = discriminator_vi(batch_labels_vi)
-            # Fake images
-            #fusion_validity_vi = discriminator_vi(fusion_img)
-            # Gradient penalty
-            #gradient_penalty_vi = compute_gradient_penalty(discriminator_vi, batch_images_vi.data, fusion_img)
-            #gradient_penalty= compute_gradient_penalty(Transfusion,batch_images.data,fusion_img)
-            # Adversarial loss
-            #d_loss_vi = (-torch.log(abs(real_validity_vi))).mean()+(-torch.log(abs(1-fusion_validity_vi))).mean()
-            #d_loss_vi = -torch.mean(real_validity_vi) + torch.mean(fusion_validity_vi) + opt.lambda_gp_vi * gradient_penalty_vi
+            
             intensity_loss=torch.mean(torch.pow(fusion_img-batch_labels_ir, 2))*opt.lam_inten_ir
-            #ssim_loss = xLoss.ssim(fusion_img,batch_images_vi)
+           
             intensity_loss2=torch.mean(torch.pow(fusion_img-batch_labels_vi, 2))
-            #lbp_loss =  xLoss.lbpLoss(fusion_img, batch_labels_vi)
+           
             gradient_loss = xLoss.gradientLoss(fusion_img, batch_images_vi)*opt.lam_gradient
-            #loss=intensity_loss+opt.lam*lbp_loss
-            #loss = intensity_loss+1000*gradient_loss
-            loss_2 = 0
-            for ll in range(4):
-                Decoupled_feature = Transfusion(batch_images)[ll]
-                loss_2 += weight_mse[ll]*mse_loss(fusion_img, Decoupled_feature)
+          
 
-            loss_3 =1.25*loss_target({'Vis': batch_images_vi, 'Inf': batch_images_ir}, fusion_img)
-            #loss_4 = 10*loss_backgd({'Vis': batch_images_vi, 'Inf': batch_images_ir}, fusion_img)
-
-            #loss = intensity_loss+loss_2+intensity_loss2+gradient_loss+loss_3
-            #loss = intensity_loss + loss_2 + intensity_loss2 + gradient_loss
+          
             loss = intensity_loss+intensity_loss2+gradient_loss
 
 
-            #d_loss_vi.backward(retain_graph=True)
+           
             loss.backward(retain_graph=True)
-            #dis_optimizer_vi.step()
+            
             Transfusion_optimizer.step()
             print_format = ['train', idx + 1, batch_idxs, loss, loss_2, intensity_loss, intensity_loss2, gradient_loss,loss_3]
             print('===> {} batch step ({}/{})\tloss:{:.5f}\tloss_2:{:.5f}\tintensity_loss:{:.5f}\tintensity_loss2:{:.5f}\tgradient_loss2:{:.5f}\tloss_3:{:.5f}'.format(*print_format))
-                #print(
-                    #"[Batch %d/%d] [D_vi loss: %f] [D_ir loss: %f] [G loss: %f]"
-                    #% ( ii+1, batch_num, d_loss_vi.item(), d_loss_ir.item(),
-                       #g_loss.item())
+                
             if (epoch+1) % opt.save_point == 0:
-                    # torch.save(generator.state_dict(), './generator.pkl')
-                    # torch.save(discriminator_vi.state_dict(), './discriminator_vi.pkl')
-                    # torch.save(discriminator_ir.state_dict(), './discriminator_ir.pkl')
+                   
                     save_path=os.path.join('./save','model%d.pkl' % (epoch +1))
                     torch.save(Transfusion,save_path)
-                    #torch.save(ResNet,save_path)
-
+                   
 if __name__ == '__main__':
     train()
