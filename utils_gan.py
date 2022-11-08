@@ -31,7 +31,7 @@ def read_data(path):
 
 
 
-# 提取图片地址
+
 def prepare_data(dataset):
     """
     Args:
@@ -39,18 +39,18 @@ def prepare_data(dataset):
 
       For train dataset, output data would be ['.../t1.bmp', '.../t2.bmp', ..., '.../t99.bmp']
     """
-     # 调动训练集
+     
     filenames = os.listdir(dataset)
     data_dir = os.path.join(os.getcwd(), dataset)
     data = glob.glob(os.path.join(data_dir, "*.bmp"))  # 查找bmp文件，存入列表中
     data.extend(glob.glob(os.path.join(data_dir, "*.tif")))
-    # 将图片按序号排序
+    
     data.sort(key=lambda x: int(x[len(data_dir) + 1:-4]))
 
     # print(data)
     return data
 
-# 将文件以h5py的形式保存
+
 def make_data(data, label, data_dir):
     """
     Make input data as h5 file format
@@ -66,14 +66,14 @@ def make_data(data, label, data_dir):
         hf.create_dataset('label', data=label)
 
 
-# 将图像数据保存为文件
+
 def imread(path, is_grayscale=True):
     """
     Read image using its path.
     Default value is gray-scale, and image is read by YCbCr format as the paper said.
     """
     if is_grayscale:
-        # flatten=True 以灰度图的形式读取
+        # flatten=True 
         return scipy.misc.imread(path, flatten=True, mode='YCbCr').astype(np.float)
     else:
         return scipy.misc.imread(path, mode='YCbCr').astype(np.float)
@@ -88,7 +88,7 @@ def input_setup(opt,data_dir,index=0):
     """
     # Load data path
 
-    # 取到所有的原始图片的地址
+    
     data = prepare_data(dataset=data_dir)
 
 
@@ -106,11 +106,11 @@ def input_setup(opt,data_dir,index=0):
             h, w, _ = input_.shape
         else:
             h, w = input_.shape
-        # 按14步长采样小patch
+        
         for x in range(0, h - opt.img_size + 1, opt.stride):
             for y in range(0, w - opt.img_size + 1, opt.stride):
                 sub_input = input_[x:x + opt.img_size, y:y + opt.img_size]  # [33 x 33]
-                # 注意这里的padding，前向传播时由于卷积是没有padding的，所以实际上预测的是测试patch的中间部分
+                
                 sub_label = label_[x + padding:x + padding + opt.label_size,
                             y + padding:y + padding + opt.label_size]  # [21 x 21]
 
@@ -121,10 +121,10 @@ def input_setup(opt,data_dir,index=0):
     (sub_input_sequence[0]).shape : (33, 33, 1)
     """
     # Make list to numpy array. With this transform
-    arrdata = np.asarray(sub_input_sequence)  # [?, 33, 33, 1]
-    arrlabel = np.asarray(sub_label_sequence)  # [?, 21, 21, 1]
+    arrdata = np.asarray(sub_input_sequence)  
+    arrlabel = np.asarray(sub_label_sequence)  
     # print(arrdata.shape)
-    make_data(arrdata, arrlabel, data_dir)  # 保存数据
+    make_data(arrdata, arrlabel, data_dir)  
 
     # if not opt.is_train:
     #     print(nx, ny)
@@ -136,7 +136,7 @@ def imsave(image, path):
     return scipy.misc.imsave(path, image)
 
 
-# 将一组图片进行组合
+
 def merge(images, size):
     h, w = images.shape[1], images.shape[2]
     img = np.zeros((h * size[0], w * size[1], 1))
